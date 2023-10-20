@@ -24,9 +24,10 @@ func NewScope() *Scope {
 }
 
 // AddInclude adds hosts to the scope's Includes list.
-func (s *Scope) AddInclude(hosts ...string) error {
-	for _, host := range hosts {
-		if err := s.addHostToScope(host, s.Includes); err != nil {
+func (s *Scope) AddInclude(targets ...string) error {
+	for _, target := range targets {
+		target = removeScheme(target)
+		if err := s.addHostToScope(target, s.Includes); err != nil {
 			return err
 		}
 	}
@@ -34,17 +35,19 @@ func (s *Scope) AddInclude(hosts ...string) error {
 }
 
 // AddExclude adds a host to the scope's Excludes list.
-func (s *Scope) AddExclude(hosts ...string) error {
-	for _, host := range hosts {
-		if err := s.addHostToScope(host, s.Excludes); err != nil {
+func (s *Scope) AddExclude(targets ...string) error {
+	for _, target := range targets {
+		target = removeScheme(target)
+		if err := s.addHostToScope(target, s.Excludes); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// IsIncluded returns true if the host is in the scope's Includes list.
-func (s *Scope) IsIncluded(host string) bool {
+// IsIncluded returns true if the target is in the scope's Includes list.
+func (s *Scope) IsIncluded(target string) bool {
+	host := removeScheme(target)
 	if s.Includes[host] {
 		return true
 	}
@@ -77,8 +80,9 @@ func (s *Scope) IsIncluded(host string) bool {
 	return false
 }
 
-// IsExcluded returns true if the host is in the scope's Excludes list.
-func (s *Scope) IsExcluded(host string) bool {
+// IsExcluded returns true if the target is in the scope's Excludes list.
+func (s *Scope) IsExcluded(target string) bool {
+	host := removeScheme(target)
 	// Direct match
 	if s.Excludes[host] {
 		return true
@@ -107,9 +111,10 @@ func (s *Scope) IsExcluded(host string) bool {
 	return false
 }
 
-// InScope returns true if the host is in the scope's Includes list and not in the Excludes list.
-func (s *Scope) InScope(host string) bool {
-	return s.IsIncluded(host) && !s.IsExcluded(host)
+// InScope returns true if the target is in the scope's Includes list and not in the Excludes list.
+func (s *Scope) InScope(target string) bool {
+	host := removeScheme(target)
+	return s.IsIncluded(host) && !s.IsExcluded(removeScheme(host))
 }
 
 // IsWildcardMatch returns true if the wildcard notation in the pattern matches the input string
@@ -152,4 +157,12 @@ func splitIPAndPort(input string) (string, string) {
 	}
 
 	return host, port
+}
+
+// removeScheme removes the URL scheme (e.g., "http://", "https://", "ftp://") from the given string.
+func removeScheme(host string) string {
+	if idx := strings.Index(host, "://"); idx != -1 {
+		return host[idx+3:]
+	}
+	return host
 }
