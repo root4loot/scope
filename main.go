@@ -60,12 +60,16 @@ func (s *Scope) IsIncluded(host string) bool {
 		for include := range s.Includes {
 			if iputil.IsCIDR(include) {
 				b, _ := iputil.IsIPInCIDR(ip.String(), include)
-				return b
+				if b {
+					return true
+				}
 			}
 
 			if iputil.IsIPRange(include) {
 				b, _ := iputil.IsIPInRange(ip.String(), include)
-				return b
+				if b {
+					return true
+				}
 			}
 		}
 	}
@@ -100,7 +104,6 @@ func (s *Scope) IsExcluded(host string) bool {
 			}
 		}
 	}
-
 	return false
 }
 
