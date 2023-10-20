@@ -75,15 +75,32 @@ func (s *Scope) IsIncluded(host string) bool {
 
 // IsExcluded returns true if the host is in the scope's Excludes list.
 func (s *Scope) IsExcluded(host string) bool {
+	// Direct match
 	if s.Excludes[host] {
 		return true
 	}
 
+	// Check for wildcard or other complex rules
 	for exclude := range s.Excludes {
 		if IsWildcardMatch(exclude, host) {
 			return true
 		}
 	}
+
+	// Check if the parent domain is excluded
+	parts := strings.Split(host, ".")
+	for i := 0; i < len(parts); i++ {
+		parentDomain := strings.Join(parts[i:], ".")
+		if s.Excludes[parentDomain] {
+			return true
+		}
+		for exclude := range s.Excludes {
+			if IsWildcardMatch(exclude, parentDomain) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 

@@ -23,4 +23,8 @@ func main() {
 	fmt.Println(s.InScope("example2.com:8080"))
 	fmt.Println(s.InScope("example2.com:1234"))
 	fmt.Println(s.InScope("foo.example.bar.test"))
+
+	s.AddExclude("static.cust.telenor.com")
+
+	fmt.Println(s.IsExcluded("81.181.212.193.static.cust.telenor.com"))
 }

@@ -16,6 +16,7 @@ func TestScope(t *testing.T) {
 		{"foo.example.com", true, false, true},
 		{"wildcard.example.com", true, false, true},
 		{"excluded.example.com", false, true, false},
+		{"sub.excluded.com", false, true, false}, // New test for subdomain exclusion
 		{"test.example2.com", true, false, true},
 		{"example.com:8080", true, false, true},
 		{"abc.example.xyz.test", true, false, true},
@@ -25,6 +26,7 @@ func TestScope(t *testing.T) {
 	s := NewScope()
 	s.AddInclude("192.168.0.1-5", "*.example.com", "example.com:8080", "test.example2.com", "*.example.*.test")
 	s.AddExclude("excluded.example.com")
+	s.AddExclude("excluded.com")
 
 	for _, test := range tests {
 		inScope := s.InScope(test.host)
