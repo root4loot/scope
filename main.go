@@ -80,30 +80,27 @@ func (s *Scope) IsIncluded(target string) bool {
 	return false
 }
 
-// IsExcluded returns true if the target is in the scope's Excludes list.
 func (s *Scope) IsExcluded(target string) bool {
-	host := removeScheme(target)
-	// Direct match
-	if s.Excludes[host] {
-		return true
-	}
-
-	// Check for wildcard or other complex rules
 	for exclude := range s.Excludes {
-		if IsWildcardMatch(exclude, host) {
+		if target == exclude {
 			return true
 		}
-	}
 
-	// Check if the parent domain is excluded
-	parts := strings.Split(host, ".")
-	for i := 0; i < len(parts); i++ {
-		parentDomain := strings.Join(parts[i:], ".")
-		if s.Excludes[parentDomain] {
-			return true
-		}
-		for exclude := range s.Excludes {
-			if IsWildcardMatch(exclude, parentDomain) {
+		// Splitting the target and exclude strings by ':'
+		excludeParts := strings.Split(exclude, ":")
+		targetParts := strings.Split(target, ":")
+
+		// Comparing base parts
+		excludeBase := excludeParts[0]
+		targetBase := targetParts[0]
+
+		if targetBase == excludeBase || strings.HasSuffix(targetBase, "."+excludeBase) {
+			// If ports are specified, they must match. Otherwise, it's a match.
+			if len(excludeParts) > 1 && len(targetParts) > 1 {
+				if excludeParts[1] == targetParts[1] {
+					return true
+				}
+			} else if len(excludeParts) == 1 && len(targetParts) == 1 {
 				return true
 			}
 		}
