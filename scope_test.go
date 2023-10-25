@@ -8,6 +8,8 @@ func TestScope(t *testing.T) {
 	s := NewScope()
 	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
 	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6")
+	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
+	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6", "192.168.0.2:8080", "exclude.example.com:443")
 
 	// Test single IPs
 	if !s.IsIncluded("192.168.0.2") {
@@ -82,5 +84,23 @@ func TestScope(t *testing.T) {
 
 	if s.IsIncluded("foo.bar.baz.test") {
 		t.Errorf("Expected false for IsIncluded, got true")
+	}
+
+	// Test IP and port number
+	if !s.IsExcluded("192.168.0.2:8080") {
+		t.Errorf("Expected true for IsExcluded, got false")
+	}
+
+	if s.IsExcluded("192.168.0.2:9090") {
+		t.Errorf("Expected false for IsExcluded, got true")
+	}
+
+	// Test domain and port number
+	if !s.IsExcluded("exclude.example.com:443") {
+		t.Errorf("Expected true for IsExcluded, got false")
+	}
+
+	if s.IsExcluded("exclude.example.com:80") {
+		t.Errorf("Expected false for IsExcluded, got true")
 	}
 }

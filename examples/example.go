@@ -13,7 +13,7 @@ func main() {
 	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
 
 	// Adding excludes
-	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6")
+	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6", "192.168.0.2:8080", "exclude.example.com:443")
 
 	// Testing with single IP
 	fmt.Println("IsIncluded:", s.IsIncluded("192.168.0.2")) // Returns true
@@ -65,4 +65,16 @@ func main() {
 	fmt.Println("IsIncluded:", s.IsIncluded("foo.bar.baz.test"))     // Returns false
 	fmt.Println("InScope:", s.InScope("foo.example.bar.test"))       // Returns true
 	fmt.Println("InScope:", s.InScope("foo.bar.baz.test"))           // Returns false
+
+	// Testing with IP and port number
+	fmt.Println("IsExcluded:", s.IsExcluded("192.168.0.2:8080")) // Returns true
+	fmt.Println("IsExcluded:", s.IsExcluded("192.168.0.2:9090")) // Returns false
+	fmt.Println("InScope:", s.InScope("192.168.0.2:8080"))       // Returns false
+	fmt.Println("InScope:", s.InScope("192.168.0.2:9090"))       // Returns true
+
+	// Testing with domain and port number
+	fmt.Println("IsExcluded:", s.IsExcluded("exclude.example.com:443")) // Returns true
+	fmt.Println("IsExcluded:", s.IsExcluded("exclude.example.com:80"))  // Returns false
+	fmt.Println("InScope:", s.InScope("exclude.example.com:443"))       // Returns false
+	fmt.Println("InScope:", s.InScope("exclude.example.com:80"))        // Returns false
 }
