@@ -7,8 +7,6 @@ import (
 func TestScope(t *testing.T) {
 	s := NewScope()
 	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
-	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6")
-	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
 	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6", "192.168.0.2:8080", "exclude.example.com:443")
 
 	// Test single IPs
@@ -102,5 +100,32 @@ func TestScope(t *testing.T) {
 
 	if s.IsExcluded("exclude.example.com:80") {
 		t.Errorf("Expected false for IsExcluded, got true")
+	}
+
+	// Test InScope
+	if !s.InScope("192.168.0.2") {
+		t.Errorf("Expected true for InScope, got false")
+	}
+
+	if s.InScope("192.168.0.7") {
+		t.Errorf("Expected false for InScope, got true")
+	}
+
+	// Test Scheme
+	if !s.InScope("http://foo.example.com") {
+		t.Errorf("Expected true for InScope with scheme, got false")
+	}
+
+	if s.InScope("https://bar.otherdomain.com") {
+		t.Errorf("Expected false for InScope with scheme, got true")
+	}
+
+	// Test excluded subdomain due to parent domain
+	if s.InScope("sub.somedomain.com") {
+		t.Errorf("Expected false for InScope, got true")
+	}
+
+	if s.InScope("sub.otherdomain.com") {
+		t.Errorf("Expected false for InScope, got true")
 	}
 }
