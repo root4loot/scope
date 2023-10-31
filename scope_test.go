@@ -129,3 +129,34 @@ func TestScope(t *testing.T) {
 		t.Errorf("Expected false for InScope, got true")
 	}
 }
+
+func TestScopeModifications(t *testing.T) {
+	s := NewScope()
+	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com")
+
+	// Test AddToScope
+	if err := s.AddToScope("newHost.com"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !s.IsIncluded("newHost.com") {
+		t.Errorf("Expected true for IsIncluded after AddToScope, got false")
+	}
+
+	if !s.InScope("newHost.com") {
+		t.Errorf("Expected true for InScope after AddToScope, got false")
+	}
+
+	// Test RemoveFromScope
+	if err := s.RemoveFromScope("newHost.com"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if s.IsIncluded("newHost.com") {
+		t.Errorf("Expected false for IsIncluded after RemoveFromScope, got true")
+	}
+
+	if s.InScope("newHost.com") {
+		t.Errorf("Expected false for InScope after RemoveFromScope, got true")
+	}
+}

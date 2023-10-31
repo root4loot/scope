@@ -1,16 +1,3 @@
-# goscope
-
-`goscope` is a lightweight Go library for managing scopes of hosts and IPv4 addresses, ideal for penetration testing tools and similar Go programs.
-
-## Installation
-
-```bash
-go get github.com/root4loot/goscope@master
-```
-
-## Example
-
-```go
 package main
 
 import (
@@ -81,10 +68,3 @@ func main() {
 		fmt.Println("Successfully removed newHost.com from scope")
 	}
 }
-
-
-```
-
-## Contributing
-
-Contributions to goscope are welcome. If you find any issues or have suggestions for improvements, feel free to open an issue or submit a pull request.
