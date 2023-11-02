@@ -10,10 +10,10 @@ import (
 	"github.com/root4loot/goutils/iputil"
 )
 
-type HostType int
+type TargetType int
 
 const (
-	IP HostType = iota
+	IP TargetType = iota
 	Domain
 	CIDR
 	IPRange
@@ -23,7 +23,7 @@ const (
 type Scope struct {
 	Includes map[string]bool
 	Excludes map[string]bool
-	Hosts    map[string]HostType
+	Targets  map[string]TargetType
 }
 
 // NewScope returns a new Scope.
@@ -31,72 +31,72 @@ func NewScope() *Scope {
 	return &Scope{
 		Includes: make(map[string]bool),
 		Excludes: make(map[string]bool),
-		Hosts:    make(map[string]HostType),
+		Targets:  make(map[string]TargetType),
 	}
 }
 
 // String returns the string representation of the HostType
-func (h HostType) String() string {
-	return [...]string{"IP", "Domain", "CIDR", "IPRange", "Other"}[h]
+func (targetType TargetType) String() string {
+	return [...]string{"IP", "Domain", "CIDR", "IPRange", "Other"}[targetType]
 }
 
-// IncludeSlice returns a string slice representation of the scope's Includes list.
-func (s *Scope) IncludeSlice() (includes []string) {
+// GetIncludes returns a string slice representation of the scope's Includes list.
+func (s *Scope) GetIncludes() (includes []string) {
 	for include := range s.Includes {
 		includes = append(includes, include)
 	}
 	return
 }
 
-// ExcludeSlice returns a string slice representation of the scope's Excludes list.
-func (s *Scope) ExcludeSlice() (excludes []string) {
+// GetExcludes returns a string slice representation of the scope's Excludes list.
+func (s *Scope) GetExcludes() (excludes []string) {
 	for exclude := range s.Excludes {
 		excludes = append(excludes, exclude)
 	}
 	return
 }
 
-// HostSlice returns all hosts as a string slice
-func (s *Scope) HostSlice() (hosts []string) {
-	for host := range s.Hosts {
-		hosts = append(hosts, host)
+// GetTargets returns all hosts as a string slice
+func (s *Scope) GetTargets() (targets []string) {
+	for target := range s.Targets {
+		targets = append(targets, target)
 	}
-	return hosts
+	return targets
 }
 
-// HostAndTypes returns all hosts and their types as a map
-func (s *Scope) HostAndTypes() map[string]HostType {
-	return s.Hosts
+// GetTargetsAndTypeMap returns all targets and their types as a map
+func (s *Scope) GetTargetsAndTypeMap() map[string]TargetType {
+	return s.Targets
 }
 
-// AddToScope adds a host to the scope's Hosts list, with error checking against Excludes.
-func (s *Scope) AddToScope(hosts ...string) error {
-	for _, host := range hosts {
-		host = strings.ToLower(host)
-		host = removeScheme(host)
+// AddTargetToScope adds one or more targets to the scope's Targets list.
+func (s *Scope) AddTargetToScope(targets ...string) error {
+	for _, target := range targets {
+		target = strings.ToLower(target)
+		target = removeScheme(target)
 
-		if s.IsExcluded(host) {
-			return fmt.Errorf("host %s is excluded", host)
+		if s.IsTargetExcluded(target) {
+			return fmt.Errorf("target %s is excluded", target)
 		}
-		hostType := categorizeHost(host)
-		s.Hosts[host] = hostType
-		s.AddInclude(host) // Automatically add to Includes
+		hostType := categorizeHost(target)
+		s.Targets[target] = hostType
+		s.AddInclude(target) // Automatically add to Includes
 	}
 	return nil
 }
 
-// RemoveFromScope removes a host from the scope's Hosts and Includes list
-func (s *Scope) RemoveFromScope(host string) error {
-	if _, exists := s.Hosts[host]; !exists {
-		return fmt.Errorf("host %s does not exist in scope", host)
+// RemoveTargetFromScope removes a target from the scope's Targets list.
+func (s *Scope) RemoveTargetFromScope(target string) error {
+	if _, exists := s.Targets[target]; !exists {
+		return fmt.Errorf("target %s does not exist in scope", target)
 	}
 
-	delete(s.Hosts, host)
-	delete(s.Includes, host)
+	delete(s.Targets, target)
+	delete(s.Includes, target)
 	return nil
 }
 
-// AddInclude adds hosts to the scope's Includes list.
+// AddInclude adds one or more targets to the scope's Includes list.
 func (s *Scope) AddInclude(targets ...string) error {
 	for _, target := range targets {
 		target = removeScheme(target)
@@ -108,7 +108,7 @@ func (s *Scope) AddInclude(targets ...string) error {
 	return nil
 }
 
-// AddExclude adds a host to the scope's Excludes list.
+// AddExclude adds one or more targets to the scope's Excludes list.
 func (s *Scope) AddExclude(targets ...string) error {
 	for _, target := range targets {
 		target = removeScheme(target)
@@ -120,8 +120,8 @@ func (s *Scope) AddExclude(targets ...string) error {
 	return nil
 }
 
-// IsIncluded returns true if the target is in the scope's Includes list.
-func (s *Scope) IsIncluded(target string) bool {
+// IsTargetIncluded returns true if the target is in the scope's Includes list.
+func (s *Scope) IsTargetIncluded(target string) bool {
 	target = removeScheme(target)
 	target = strings.ToLower(target)
 
@@ -157,8 +157,8 @@ func (s *Scope) IsIncluded(target string) bool {
 	return false
 }
 
-// IsExcluded returns true if the target is in the scope's Excludes list.
-func (s *Scope) IsExcluded(target string) bool {
+// IsTargetExcluded returns true if the target is in the scope's Excludes list.
+func (s *Scope) IsTargetExcluded(target string) bool {
 	target = removeScheme(target)
 	target = strings.ToLower(target)
 
@@ -189,11 +189,11 @@ func (s *Scope) IsExcluded(target string) bool {
 	return false
 }
 
-// InScope returns true if the target is in the scope's Includes list and not in the Excludes list.
-func (s *Scope) InScope(target string) bool {
+// IsTargetInScope returns true if the target is in the scope's Includes list and not in the Excludes list.
+func (s *Scope) IsTargetInScope(target string) bool {
 	target = strings.ToLower(target)
 	target = removeScheme(target)
-	return s.IsIncluded(target) && !s.IsExcluded(removeScheme(target))
+	return s.IsTargetIncluded(target) && !s.IsTargetExcluded(removeScheme(target))
 }
 
 // addHostToScope adds a target to the scope
@@ -229,25 +229,25 @@ func splitIPAndPort(input string) (string, string) {
 }
 
 // removeScheme removes the URL scheme (e.g., "http://", "https://", "ftp://") from the given string.
-func removeScheme(host string) string {
-	if idx := strings.Index(host, "://"); idx != -1 {
-		return host[idx+3:]
+func removeScheme(target string) string {
+	if idx := strings.Index(target, "://"); idx != -1 {
+		return target[idx+3:]
 	}
-	return host
+	return target
 }
 
-// categorizeHost categorizes the host into IP or Domain or other.
-func categorizeHost(host string) HostType {
-	if iputil.IsIP(host) {
+// categorizeHost categorizes the target into IP or Domain or other.
+func categorizeHost(target string) TargetType {
+	if iputil.IsIP(target) {
 		return IP
 	}
-	if domainutil.IsDomainName(host) {
+	if domainutil.IsDomainName(target) {
 		return Domain
 	}
-	if iputil.IsCIDR(host) {
+	if iputil.IsCIDR(target) {
 		return CIDR
 	}
-	if iputil.IsIPRange(host) {
+	if iputil.IsIPRange(target) {
 		return IPRange
 	}
 	return Other
