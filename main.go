@@ -72,6 +72,9 @@ func (s *Scope) HostAndTypes() map[string]HostType {
 // AddToScope adds a host to the scope's Hosts list, with error checking against Excludes.
 func (s *Scope) AddToScope(hosts ...string) error {
 	for _, host := range hosts {
+		host = strings.ToLower(host)
+		host = removeScheme(host)
+
 		if s.IsExcluded(host) {
 			return fmt.Errorf("host %s is excluded", host)
 		}
@@ -97,6 +100,7 @@ func (s *Scope) RemoveFromScope(host string) error {
 func (s *Scope) AddInclude(targets ...string) error {
 	for _, target := range targets {
 		target = removeScheme(target)
+		target = strings.ToLower(target)
 		if err := s.addHostToScope(target, s.Includes); err != nil {
 			return err
 		}
@@ -108,6 +112,7 @@ func (s *Scope) AddInclude(targets ...string) error {
 func (s *Scope) AddExclude(targets ...string) error {
 	for _, target := range targets {
 		target = removeScheme(target)
+		target = strings.ToLower(target)
 		if err := s.addHostToScope(target, s.Excludes); err != nil {
 			return err
 		}
@@ -117,19 +122,21 @@ func (s *Scope) AddExclude(targets ...string) error {
 
 // IsIncluded returns true if the target is in the scope's Includes list.
 func (s *Scope) IsIncluded(target string) bool {
-	host := removeScheme(target)
-	if s.Includes[host] {
+	target = removeScheme(target)
+	target = strings.ToLower(target)
+
+	if s.Includes[target] {
 		return true
 	}
 
 	for include := range s.Includes {
-		if isWildcardMatch(include, host) {
+		if isWildcardMatch(include, target) {
 			return true
 		}
 	}
 
-	if iputil.IsIP(host) {
-		ip := net.ParseIP(host)
+	if iputil.IsIP(target) {
+		ip := net.ParseIP(target)
 		for include := range s.Includes {
 			if iputil.IsCIDR(include) {
 				b, _ := iputil.IsIPInCIDR(ip.String(), include)
@@ -152,6 +159,9 @@ func (s *Scope) IsIncluded(target string) bool {
 
 // IsExcluded returns true if the target is in the scope's Excludes list.
 func (s *Scope) IsExcluded(target string) bool {
+	target = removeScheme(target)
+	target = strings.ToLower(target)
+
 	for exclude := range s.Excludes {
 		if target == exclude {
 			return true
@@ -181,29 +191,30 @@ func (s *Scope) IsExcluded(target string) bool {
 
 // InScope returns true if the target is in the scope's Includes list and not in the Excludes list.
 func (s *Scope) InScope(target string) bool {
-	host := removeScheme(target)
-	return s.IsIncluded(host) && !s.IsExcluded(removeScheme(host))
+	target = strings.ToLower(target)
+	target = removeScheme(target)
+	return s.IsIncluded(target) && !s.IsExcluded(removeScheme(target))
 }
 
-// addHostToScope adds a host to the scope
-func (s *Scope) addHostToScope(host string, scope map[string]bool) error {
-	host, port := splitIPAndPort(host)
+// addHostToScope adds a target to the scope
+func (s *Scope) addHostToScope(target string, scope map[string]bool) error {
+	target, port := splitIPAndPort(target)
 	additional := ""
 	if port != "" {
 		additional = ":" + port
 	}
 
-	if iputil.IsValidIP(host) || domainutil.IsDomainName(host) {
-		scope[host+additional] = true
+	if iputil.IsValidIP(target) || domainutil.IsDomainName(target) {
+		scope[target+additional] = true
 		return nil
 	}
 
-	if iputil.IsValidCIDR(host) || iputil.IsValidIPRange(host) || strings.Contains(host, "*") {
-		scope[host] = true
+	if iputil.IsValidCIDR(target) || iputil.IsValidIPRange(target) || strings.Contains(target, "*") {
+		scope[target] = true
 		return nil
 	}
 
-	return fmt.Errorf("invalid host: %s", host)
+	return fmt.Errorf("invalid host: %s", target)
 }
 
 // splitIPAndPort splits a host:port string into host and port
