@@ -129,6 +129,8 @@ func (s *Scope) AddTargetToScope(targets ...string) error {
 
 // RemoveTargetFromScope removes a target from the scope's Targets list.
 func (s *Scope) RemoveTargetFromScope(target string) error {
+	target = strings.ToLower(target)
+	target = removeScheme(target)
 	if _, exists := s.Targets[target]; !exists {
 		return fmt.Errorf("target %s does not exist in scope", target)
 	}
