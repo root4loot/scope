@@ -20,6 +20,8 @@ const (
 	Other
 )
 
+// Scope represents a set of includes, excludes, and targets.
+// It must be initialized using NewScope() before use.
 type Scope struct {
 	Includes map[string]bool
 	Excludes map[string]bool
