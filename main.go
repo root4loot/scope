@@ -64,6 +64,46 @@ func (s *Scope) GetTargets() (targets []string) {
 	return targets
 }
 
+// GetTargetDomains returns all domains as a string slice
+func (s *Scope) GetTargetDomains() (domains []string) {
+	for target, hostType := range s.Targets {
+		if hostType == Domain {
+			domains = append(domains, target)
+		}
+	}
+	return domains
+}
+
+// GetTargetIPs returns all IPs as a string slice
+func (s *Scope) GetTargetIPs() (ips []string) {
+	for target, hostType := range s.Targets {
+		if hostType == IP {
+			ips = append(ips, target)
+		}
+	}
+	return ips
+}
+
+// GetTargetCIDRs returns all CIDRs as a string slice
+func (s *Scope) GetTargetCIDRs() (cidrs []string) {
+	for target, hostType := range s.Targets {
+		if hostType == CIDR {
+			cidrs = append(cidrs, target)
+		}
+	}
+	return cidrs
+}
+
+// GetTargetIPRanges returns all IP ranges as a string slice
+func (s *Scope) GetTargetIPRanges() (ipRanges []string) {
+	for target, hostType := range s.Targets {
+		if hostType == IPRange {
+			ipRanges = append(ipRanges, target)
+		}
+	}
+	return ipRanges
+}
+
 // GetTargetsAndTypeMap returns all targets and their types as a map
 func (s *Scope) GetTargetsAndTypeMap() map[string]TargetType {
 	return s.Targets
@@ -194,6 +234,14 @@ func (s *Scope) IsTargetInScope(target string) bool {
 	target = strings.ToLower(target)
 	target = removeScheme(target)
 	return s.IsTargetIncluded(target) && !s.IsTargetExcluded(removeScheme(target))
+}
+
+// IsTargetAdded returns true if the target is in the scope's Targets list.
+func (s *Scope) IsTargetAdded(target string) bool {
+	target = strings.ToLower(target)
+	target = removeScheme(target)
+	_, exists := s.Targets[target]
+	return exists
 }
 
 // addHostToScope adds a target to the scope

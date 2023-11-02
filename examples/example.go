@@ -68,9 +68,17 @@ func main() {
 	s.RemoveTargetFromScope("new.example.com")
 	fmt.Println("RemoveFromScope:", s.IsTargetInScope("new.example.com")) // Should return false
 
-	// Retrieve all hosts in the scope as a slice
-	hosts := s.GetTargets()
-	fmt.Println("GetHostsAsSlice:", hosts)
+	// Retrieve all targets in the scope as a slice
+	targets := s.GetTargets()
+	fmt.Println("GetHostsAsSlice:", targets)
+
+	// Retrieve all domains in the scope as a slice
+	domains := s.GetTargetDomains()
+	fmt.Println("GetDomainsAsSlice:", domains)
+
+	// Retrieve all IPs in the scope as a slice
+	ips := s.GetTargetIPs()
+	fmt.Println("GetIPsAsSlice:", ips)
 
 	// Print scope details as strings
 	fmt.Println(s.GetIncludes())
