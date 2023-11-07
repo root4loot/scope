@@ -8,24 +8,22 @@ import (
 
 	"github.com/root4loot/goutils/domainutil"
 	"github.com/root4loot/goutils/iputil"
+	"github.com/root4loot/goutils/sliceutil"
 )
 
-type TargetType int
-
-const (
-	IP TargetType = iota
-	Domain
-	CIDR
-	IPRange
-	Other
-)
+// Targets represents a set of IPs, domains, and other targets.
+type Targets struct {
+	IPs     []string
+	Domains []string
+	Other   []string
+}
 
 // Scope represents a set of includes, excludes, and targets.
 // It must be initialized using NewScope() before use.
 type Scope struct {
 	Includes map[string]bool
 	Excludes map[string]bool
-	Targets  map[string]TargetType
+	Targets  *Targets
 }
 
 // NewScope returns a new Scope.
@@ -33,13 +31,17 @@ func NewScope() *Scope {
 	return &Scope{
 		Includes: make(map[string]bool),
 		Excludes: make(map[string]bool),
-		Targets:  make(map[string]TargetType),
+		Targets:  &Targets{},
 	}
 }
 
-// String returns the string representation of the HostType
-func (targetType TargetType) String() string {
-	return [...]string{"IP", "Domain", "CIDR", "IPRange", "Other"}[targetType]
+// GetTargetsCIDR returns a string slice representation of the scope's Targets CIDR list.
+func (s *Scope) GetTargetsCIDR() (cidrs []string, err error) {
+	cidrs, err = iputil.IPsToCIDR(s.Targets.IPs)
+	if err != nil {
+		return nil, err
+	}
+	return cidrs, nil
 }
 
 // GetIncludes returns a string slice representation of the scope's Includes list.
@@ -58,57 +60,22 @@ func (s *Scope) GetExcludes() (excludes []string) {
 	return
 }
 
-// GetTargets returns all hosts as a string slice
-func (s *Scope) GetTargets() (targets []string) {
-	for target := range s.Targets {
-		targets = append(targets, target)
-	}
+// GetAllTargets returns all hosts as a string slice
+func (s *Scope) GetAllTargets() (targets []string) {
+	targets = append(targets, s.Targets.IPs...)
+	targets = append(targets, s.Targets.Domains...)
+	targets = append(targets, s.Targets.Other...)
 	return targets
 }
 
 // GetTargetDomains returns all domains as a string slice
 func (s *Scope) GetTargetDomains() (domains []string) {
-	for target, hostType := range s.Targets {
-		if hostType == Domain {
-			domains = append(domains, target)
-		}
-	}
-	return domains
+	return s.Targets.Domains
 }
 
 // GetTargetIPs returns all IPs as a string slice
 func (s *Scope) GetTargetIPs() (ips []string) {
-	for target, hostType := range s.Targets {
-		if hostType == IP {
-			ips = append(ips, target)
-		}
-	}
-	return ips
-}
-
-// GetTargetCIDRs returns all CIDRs as a string slice
-func (s *Scope) GetTargetCIDRs() (cidrs []string) {
-	for target, hostType := range s.Targets {
-		if hostType == CIDR {
-			cidrs = append(cidrs, target)
-		}
-	}
-	return cidrs
-}
-
-// GetTargetIPRanges returns all IP ranges as a string slice
-func (s *Scope) GetTargetIPRanges() (ipRanges []string) {
-	for target, hostType := range s.Targets {
-		if hostType == IPRange {
-			ipRanges = append(ipRanges, target)
-		}
-	}
-	return ipRanges
-}
-
-// GetTargetsAndTypeMap returns all targets and their types as a map
-func (s *Scope) GetTargetsAndTypeMap() map[string]TargetType {
-	return s.Targets
+	return s.Targets.IPs
 }
 
 // AddTargetToScope adds one or more targets to the scope's Targets list.
@@ -120,9 +87,36 @@ func (s *Scope) AddTargetToScope(targets ...string) error {
 		if s.IsTargetExcluded(target) {
 			return fmt.Errorf("target %s is excluded", target)
 		}
-		hostType := categorizeHost(target)
-		s.Targets[target] = hostType
-		s.AddInclude(target) // Automatically add to Includes
+
+		if s.IsTargetAdded(target) {
+			return nil // Target already added
+		}
+
+		if iputil.IsIP(target) {
+			s.Targets.IPs = append(s.Targets.IPs, target)
+		} else if domainutil.IsDomainName(target) {
+			s.Targets.Domains = append(s.Targets.Domains, target)
+		} else if iputil.IsCIDR(target) {
+			cidrs, err := iputil.ParseCIDR(target)
+			if err != nil {
+				return err
+			}
+			for i := range cidrs {
+				s.Targets.IPs = append(s.Targets.IPs, cidrs[i].String())
+			}
+		} else if iputil.IsIPRange(target) {
+			ips, err := iputil.ParseIPRange(target)
+			if err != nil {
+				return err
+			}
+			for i := range ips {
+				s.Targets.IPs = append(s.Targets.IPs, ips[i].String())
+			}
+		} else {
+			s.Targets.Other = append(s.Targets.Other, target)
+		}
+
+		s.AddInclude(target) // Include added target
 	}
 	return nil
 }
@@ -131,12 +125,20 @@ func (s *Scope) AddTargetToScope(targets ...string) error {
 func (s *Scope) RemoveTargetFromScope(target string) error {
 	target = strings.ToLower(target)
 	target = removeScheme(target)
-	if _, exists := s.Targets[target]; !exists {
-		return fmt.Errorf("target %s does not exist in scope", target)
+
+	if !s.IsTargetAdded(target) {
+		return fmt.Errorf("target %s is not in scope", target)
 	}
 
-	delete(s.Targets, target)
-	delete(s.Includes, target)
+	if sliceutil.Contains(s.Targets.IPs, target) {
+		s.Targets.IPs = sliceutil.Remove(s.Targets.IPs, target)
+		delete(s.Includes, target)
+	}
+
+	if sliceutil.Contains(s.Targets.Domains, target) {
+		s.Targets.Domains = sliceutil.Remove(s.Targets.Domains, target)
+		delete(s.Includes, target)
+	}
 	return nil
 }
 
@@ -244,8 +246,26 @@ func (s *Scope) IsTargetInScope(target string) bool {
 func (s *Scope) IsTargetAdded(target string) bool {
 	target = strings.ToLower(target)
 	target = removeScheme(target)
-	_, exists := s.Targets[target]
-	return exists
+
+	for i := range s.Targets.Domains {
+		if s.Targets.Domains[i] == target {
+			return true
+		}
+	}
+
+	for i := range s.Targets.IPs {
+		if s.Targets.IPs[i] == target {
+			return true
+		}
+	}
+
+	for i := range s.Targets.Other {
+		if s.Targets.Other[i] == target {
+			return true
+		}
+	}
+
+	return false
 }
 
 // addHostToScope adds a target to the scope
@@ -286,23 +306,6 @@ func removeScheme(target string) string {
 		return target[idx+3:]
 	}
 	return target
-}
-
-// categorizeHost categorizes the target into IP or Domain or other.
-func categorizeHost(target string) TargetType {
-	if iputil.IsIP(target) {
-		return IP
-	}
-	if domainutil.IsDomainName(target) {
-		return Domain
-	}
-	if iputil.IsCIDR(target) {
-		return CIDR
-	}
-	if iputil.IsIPRange(target) {
-		return IPRange
-	}
-	return Other
 }
 
 // isWildcardMatch returns true if the wildcard notation in the pattern matches the input string

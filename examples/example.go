@@ -61,27 +61,34 @@ func main() {
 	fmt.Println("IsTargetExcluded:", s.IsTargetExcluded("192.168.0.2:9090")) // Returns false
 
 	// Add specific domains and IPs to the scope
-	s.AddTargetToScope("new.example.com", "192.168.15.1")
-	fmt.Println("AddToScope:", s.IsTargetInScope("new.example.com")) // Should return true
+	s.AddTargetToScope("new.example.com", "foo.example.com", "192.168.15.1")
+	fmt.Println("AddTargetToScope:", s.IsTargetInScope("new.example.com")) // Should return true
 
 	// Remove specific domains and IPs from the scope
 	s.RemoveTargetFromScope("new.example.com")
-	fmt.Println("RemoveFromScope:", s.IsTargetInScope("new.example.com")) // Should return false
+	fmt.Println("RemoveTargetFromScope:", s.IsTargetInScope("new.example.com")) // Should return false
 
 	// Retrieve all targets in the scope as a slice
-	targets := s.GetTargets()
-	fmt.Println("GetHostsAsSlice:", targets)
+	targets := s.GetAllTargets()
+	fmt.Println("GetAllTargets:", targets)
+
+	// Retrieve all CIDRs in the scope as a slice
+	cidrs, err := s.GetTargetsCIDR()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("GetTargetsCIDR:", cidrs)
 
 	// Retrieve all domains in the scope as a slice
 	domains := s.GetTargetDomains()
-	fmt.Println("GetDomainsAsSlice:", domains)
+	fmt.Println("GetTargetDomains:", domains)
 
 	// Retrieve all IPs in the scope as a slice
 	ips := s.GetTargetIPs()
-	fmt.Println("GetIPsAsSlice:", ips)
+	fmt.Println("GetTargetIPs:", ips)
 
 	// Print scope details as strings
 	fmt.Println(s.GetIncludes())
 	fmt.Println(s.GetExcludes())
-	fmt.Println(s.GetTargets())
+	fmt.Println(s.GetAllTargets())
 }
