@@ -35,15 +35,6 @@ func NewScope() *Scope {
 	}
 }
 
-// GetTargetsCIDR returns a string slice representation of the scope's Targets CIDR list.
-func (s *Scope) GetTargetsCIDR() (cidrs []string, err error) {
-	cidrs, err = iputil.IPsToCIDR(s.Targets.IPs)
-	if err != nil {
-		return nil, err
-	}
-	return cidrs, nil
-}
-
 // GetIncludes returns a string slice representation of the scope's Includes list.
 func (s *Scope) GetIncludes() (includes []string) {
 	for include := range s.Includes {
@@ -58,6 +49,15 @@ func (s *Scope) GetExcludes() (excludes []string) {
 		excludes = append(excludes, exclude)
 	}
 	return
+}
+
+// GetTargetsCIDR returns a string slice representation of the scope's Targets CIDR list.
+func (s *Scope) GetTargetCIDRs() (cidrs []string, err error) {
+	cidrs, err = iputil.IPsToCIDR(s.Targets.IPs)
+	if err != nil {
+		return nil, err
+	}
+	return cidrs, nil
 }
 
 // GetAllTargets returns all hosts as a string slice

@@ -73,7 +73,7 @@ func main() {
 	fmt.Println("GetAllTargets:", targets)
 
 	// Retrieve all CIDRs in the scope as a slice
-	cidrs, err := s.GetTargetsCIDR()
+	cidrs, err := s.GetTargetCIDRs()
 	if err != nil {
 		fmt.Println(err)
 	}
