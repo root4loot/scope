@@ -78,6 +78,11 @@ func (s *Scope) GetTargetIPs() (ips []string) {
 	return s.Targets.IPs
 }
 
+// GetTargetOther returns all other targets as a string slice
+func (s *Scope) GetTargetOther() (other []string) {
+	return s.Targets.Other
+}
+
 // AddTargetToScope adds one or more targets to the scope's Targets list.
 func (s *Scope) AddTargetToScope(targets ...string) error {
 	for _, target := range targets {
