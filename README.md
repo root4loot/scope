@@ -5,7 +5,7 @@
 ## Installation
 
 ```bash
-go get github.com/root4loot/goscope@master
+go get github.com/root4loot/goscope@latest
 ```
 
 ## Usage
