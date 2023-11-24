@@ -139,12 +139,25 @@ func TestScopeModifications(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
+	// With trailing slash
+	if err := s.AddTargetToScope("newhostwithslash.com/"); err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
 	if !s.IsTargetIncluded("newHost.com") {
 		t.Errorf("Expected true for IsTargetIncluded after AddToScope, got false")
 	}
 
+	if !s.IsTargetIncluded("newhostwithslash.com") {
+		t.Errorf("Expected true for target with slash, got false")
+	}
+
 	if !s.IsTargetInScope("newHost.com") {
 		t.Errorf("Expected true for InScope after AddToScope, got false")
+	}
+
+	if !s.IsTargetInScope("newhostwithslash.com") {
+		t.Errorf("Expected true for target with slash, got false")
 	}
 
 	// Test RemoveFromScope

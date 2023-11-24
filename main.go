@@ -87,7 +87,7 @@ func (s *Scope) GetTargetOther() (other []string) {
 func (s *Scope) AddTargetToScope(targets ...string) error {
 	for _, target := range targets {
 		target = strings.ToLower(target)
-		target = removeScheme(target)
+		target = removeSchemeAndTrailSlash(target)
 
 		if s.IsTargetExcluded(target) {
 			return fmt.Errorf("target %s is excluded", target)
@@ -129,7 +129,7 @@ func (s *Scope) AddTargetToScope(targets ...string) error {
 // RemoveTargetFromScope removes a target from the scope's Targets list.
 func (s *Scope) RemoveTargetFromScope(target string) error {
 	target = strings.ToLower(target)
-	target = removeScheme(target)
+	target = removeSchemeAndTrailSlash(target)
 
 	if !s.IsTargetAdded(target) {
 		return fmt.Errorf("target %s is not in scope", target)
@@ -150,7 +150,7 @@ func (s *Scope) RemoveTargetFromScope(target string) error {
 // AddInclude adds one or more targets to the scope's Includes list.
 func (s *Scope) AddInclude(targets ...string) error {
 	for _, target := range targets {
-		target = removeScheme(target)
+		target = removeSchemeAndTrailSlash(target)
 		target = strings.ToLower(target)
 		if err := s.addHostToScope(target, s.Includes); err != nil {
 			return err
@@ -162,7 +162,7 @@ func (s *Scope) AddInclude(targets ...string) error {
 // AddExclude adds one or more targets to the scope's Excludes list.
 func (s *Scope) AddExclude(targets ...string) error {
 	for _, target := range targets {
-		target = removeScheme(target)
+		target = removeSchemeAndTrailSlash(target)
 		target = strings.ToLower(target)
 		if err := s.addHostToScope(target, s.Excludes); err != nil {
 			return err
@@ -173,7 +173,7 @@ func (s *Scope) AddExclude(targets ...string) error {
 
 // IsTargetIncluded returns true if the target is in the scope's Includes list.
 func (s *Scope) IsTargetIncluded(target string) bool {
-	target = removeScheme(target)
+	target = removeSchemeAndTrailSlash(target)
 	target = strings.ToLower(target)
 
 	if s.Includes[target] {
@@ -210,7 +210,7 @@ func (s *Scope) IsTargetIncluded(target string) bool {
 
 // IsTargetExcluded returns true if the target is in the scope's Excludes list.
 func (s *Scope) IsTargetExcluded(target string) bool {
-	target = removeScheme(target)
+	target = removeSchemeAndTrailSlash(target)
 	target = strings.ToLower(target)
 
 	for exclude := range s.Excludes {
@@ -243,14 +243,14 @@ func (s *Scope) IsTargetExcluded(target string) bool {
 // IsTargetInScope returns true if the target is in the scope's Includes list and not in the Excludes list.
 func (s *Scope) IsTargetInScope(target string) bool {
 	target = strings.ToLower(target)
-	target = removeScheme(target)
-	return s.IsTargetIncluded(target) && !s.IsTargetExcluded(removeScheme(target))
+	target = removeSchemeAndTrailSlash(target)
+	return s.IsTargetIncluded(target) && !s.IsTargetExcluded(removeSchemeAndTrailSlash(target))
 }
 
 // IsTargetAdded returns true if the target is in the scope's Targets list.
 func (s *Scope) IsTargetAdded(target string) bool {
 	target = strings.ToLower(target)
-	target = removeScheme(target)
+	target = removeSchemeAndTrailSlash(target)
 
 	for i := range s.Targets.Domains {
 		if s.Targets.Domains[i] == target {
@@ -303,6 +303,21 @@ func splitIPAndPort(input string) (string, string) {
 	}
 
 	return host, port
+}
+
+// removeSchemeAndTrailSlash removes the URL scheme (e.g., "http://", "https://", "ftp://") and trailing slash from the given string.
+func removeSchemeAndTrailSlash(target string) string {
+	target = removeScheme(target)
+	target = removeTrailSlash(target)
+	return target
+}
+
+// removeTrailSlash removes the trailing slash from the given string.
+func removeTrailSlash(target string) string {
+	if strings.HasSuffix(target, "/") {
+		return target[:len(target)-1]
+	}
+	return target
 }
 
 // removeScheme removes the URL scheme (e.g., "http://", "https://", "ftp://") from the given string.
