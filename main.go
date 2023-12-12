@@ -176,7 +176,7 @@ func (s *Scope) IsTargetIncluded(target string) bool {
 	target = removeSchemeAndTrailSlash(target)
 	target = strings.ToLower(target)
 
-	if s.Includes[target] {
+	if s.Includes[target] || isParentDirectoryIncluded(target, s.Includes) {
 		return true
 	}
 
@@ -208,39 +208,49 @@ func (s *Scope) IsTargetIncluded(target string) bool {
 	return false
 }
 
-// IsTargetExcluded returns true if the target is in the scope's Excludes list.
+// IsTargetExcluded checks if a target is excluded, considering domain hierarchies and specific conditions.
 func (s *Scope) IsTargetExcluded(target string) bool {
 	target = removeSchemeAndTrailSlash(target)
 	target = strings.ToLower(target)
 
+	targetParts := strings.Split(target, ":")
+	targetBase := targetParts[0]
+	targetPort := ""
+	if len(targetParts) > 1 {
+		targetPort = targetParts[1]
+	}
+
 	for exclude := range s.Excludes {
-		if target == exclude {
+		excludeParts := strings.Split(exclude, ":")
+		excludeBase := excludeParts[0]
+		excludePort := ""
+		if len(excludeParts) > 1 {
+			excludePort = excludeParts[1]
+		}
+
+		if targetBase == excludeBase {
+			if targetPort == excludePort {
+				return true // Exact match including port
+			}
+			if targetPort != "" && excludePort == "" {
+				continue // Target has port, but exclude does not
+			}
+			if targetPort == "" && excludePort != "" {
+				continue // Target does not have port, but exclude does
+			}
+			if targetPort == "" && excludePort == "" {
+				return true // Match without port specification
+			}
+		} else if strings.HasSuffix(targetBase, "."+excludeBase) {
+			// Check for domain hierarchy match without considering ports
 			return true
 		}
-
-		// Splitting the target and exclude strings by ':'
-		excludeParts := strings.Split(exclude, ":")
-		targetParts := strings.Split(target, ":")
-
-		// Comparing base parts
-		excludeBase := excludeParts[0]
-		targetBase := targetParts[0]
-
-		if targetBase == excludeBase || strings.HasSuffix(targetBase, "."+excludeBase) {
-			// If ports are specified, they must match. Otherwise, it's a match.
-			if len(excludeParts) > 1 && len(targetParts) > 1 {
-				if excludeParts[1] == targetParts[1] {
-					return true
-				}
-			} else if len(excludeParts) == 1 && len(targetParts) == 1 {
-				return true
-			}
-		}
 	}
+
 	return false
 }
 
-// IsTargetInScope returns true if the target is in the scope's Includes list and not in the Excludes list.
+// IsTargetInScope now considers parent directories as well.
 func (s *Scope) IsTargetInScope(target string) bool {
 	target = strings.ToLower(target)
 	target = removeSchemeAndTrailSlash(target)
@@ -335,4 +345,24 @@ func isWildcardMatch(pattern, input string) bool {
 
 	matched, _ := regexp.MatchString("^"+regexPattern+"$", input)
 	return matched
+}
+
+// isParentDirectoryIncluded checks if any parent directory of the target is included.
+func isParentDirectoryIncluded(target string, includes map[string]bool) bool {
+	for include := range includes {
+		if strings.HasPrefix(target, include) {
+			return true
+		}
+	}
+	return false
+}
+
+// isParentDirectoryExcluded checks if any parent directory of the target is excluded.
+func isParentDirectoryExcluded(target string, excludes map[string]bool) bool {
+	for exclude := range excludes {
+		if strings.HasPrefix(target, exclude) {
+			return true
+		}
+	}
+	return false
 }

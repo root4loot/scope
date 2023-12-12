@@ -125,6 +125,10 @@ func TestIsInScope(t *testing.T) {
 	if !s.IsTargetInScope("example.com") {
 		t.Fatal()
 	}
+
+	if !s.IsTargetInScope("http://example.com/foo/scope.html") {
+		t.Fatal()
+	}
 }
 
 func TestRemoveTarget(t *testing.T) {
