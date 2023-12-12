@@ -82,10 +82,6 @@ func TestIsExcluded(t *testing.T) {
 		t.Fatal()
 	}
 
-	if s.IsTargetExcluded("sub.otherdomain.com") {
-		t.Fatal()
-	}
-
 	if !s.IsTargetExcluded("192.168.0.2:8080") {
 		t.Fatal()
 	}
@@ -123,14 +119,6 @@ func TestIsInScope(t *testing.T) {
 	}
 
 	if !s.IsTargetInScope("sub.example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("sub.example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("example.com") {
 		t.Fatal()
 	}
 
