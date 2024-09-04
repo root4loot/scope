@@ -1,10 +1,10 @@
-module github.com/root4loot/goscope
+module github.com/root4loot/scope
 
-go 1.21.1
+go 1.23.0
 
-require github.com/root4loot/goutils v0.0.0-20231107142324-5da47c8e4acd
+require github.com/root4loot/goutils v0.0.0-20240904125854-490f474cd0cf
 
 require (
-	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/yl2chen/cidranger v1.0.2 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

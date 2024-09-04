@@ -1,18 +1,50 @@
-# goscope
+# scope
 
-`goscope` is a lightweight Go library for managing scopes of hosts and IPv4 addresses, ideal for penetration testing tools and similar Go programs.
+Simple library for managing scopes of hosts and IPv4 addresses, ideal for penetration testing tools and other network-related Go applications.
 
 ## Installation
 
 ```bash
-go get github.com/root4loot/goscope@latest
+go get github.com/root4loot/scope@latest
 ```
 
-## Usage
+## Simple Usage
 
-See [example.go](https://github.com/root4loot/goscope/blob/main/examples/example.go)
+```go
+package main
 
+import (
+	"fmt"
+	"github.com/root4loot/scope"
+)
+
+func main() {
+	// Initialize a new Scope instance
+	sc := scope.NewScope()
+
+	// Add includes
+	sc.AddInclude("example.com")
+	sc.AddInclude("192.168.1.1")
+
+	// Add excludes
+	sc.AddExclude("example.com:8080")
+	sc.AddExclude("http://192.168.1.1")
+
+	// Check if a domain is in scope
+	fmt.Println(sc.IsInScope("example.com"))       // Output: true
+	fmt.Println(sc.IsInScope("example.com:8080"))  // Output: false
+
+	// Check if an IP is in scope
+	fmt.Println(sc.IsInScope("192.168.1.1"))        // Output: false
+	fmt.Println(sc.IsInScope("10.0.0.1"))           // Output: false
+
+	// Get active scope
+	activeScope := sc.GetScope()
+	fmt.Printf("Active scope: %v\n", activeScope)
+}
 ```
+
+For more detailed usage, see [example.go](https://github.com/root4loot/scope/blob/main/example/example.go)
 
 ## Contributing
 

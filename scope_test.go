@@ -1,148 +1,92 @@
-package goscope
+package scope
 
 import (
 	"testing"
 )
 
-func Init() *Scope {
-	s := NewScope()
-	s.AddInclude("192.168.0.1-5", "192.168.10.0/24", "*.example.com", "example2.com:8080", "*.example.*.test")
-	s.AddExclude("somedomain.com", "exclude.example.com", "192.168.0.6", "192.168.0.2:8080", "exclude.example.com:443")
-	s.AddTargetToScope("example.com", "example.com/", "http://example.com", "http://example.com/", "http://example.com/foo", "http://example.com/foo/", "https://example.com/robots.txt")
-
-	return s
-}
-
-func TestIsIncluded(t *testing.T) {
-	s := Init()
-	if !s.IsTargetIncluded("192.168.0.2") {
-		t.Fatal()
+func TestDomainInclusionsWithPorts(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected bool
+	}{
+		{"example.com", true},
+		{"example.com:8080", false},
+		{"example.com:9090", false},
+		{"sub.example.com", true},
+		{"another.example.com", true},
+		{"deep.sub.example.com", true},
+		{"http://example.com", true},
+		{"https://example.com", true},
+		{"https://example.com:443", true},
+		{"https://example.com:8080", false},
 	}
 
-	if s.IsTargetIncluded("192.168.0.7") {
-		t.Fatal()
-	}
+	sc := NewScope()
 
-	if !s.IsTargetIncluded("192.168.0.4") {
-		t.Fatal()
-	}
+	sc.AddIncludes([]string{
+		"example.com",
+		"example.com:8080",
+		"sub.example.com",
+		"another.example.com",
+		"deep.sub.example.com",
+		"http://example.com",
+		"https://example.com",
+		"https://example.com:443",
+	})
 
-	if s.IsTargetIncluded("192.168.0.8") {
-		t.Fatal()
-	}
+	sc.AddExcludes([]string{
+		"https://example.com:8080",
+		"example.com:9090",
+	})
 
-	if !s.IsTargetIncluded("192.168.10.50") {
-		t.Fatal()
-	}
-
-	if s.IsTargetIncluded("192.168.11.50") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetIncluded("foo.example.com") {
-		t.Fatal()
-	}
-
-	if s.IsTargetIncluded("bar.otherdomain.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetIncluded("example2.com:8080") {
-		t.Fatal()
-	}
-
-	if s.IsTargetIncluded("example2.com:1234") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetIncluded("foo.example.bar.test") {
-		t.Fatal()
-	}
-
-	if s.IsTargetIncluded("foo.bar.baz.test") {
-		t.Fatal()
+	for _, test := range tests {
+		t.Run(test.url, func(t *testing.T) {
+			result := sc.IsInScope(test.url)
+			if result != test.expected {
+				t.Errorf("expected %v for URL '%s', got %v", test.expected, test.url, result)
+			}
+		})
 	}
 }
+func TestIPInclusions(t *testing.T) {
+	sc := NewScope()
 
-func TestIsExcluded(t *testing.T) {
-	s := Init()
-	if !s.IsTargetExcluded("192.168.0.6") {
-		t.Fatal()
+	sc.AddIncludes([]string{
+		"192.168.1.1",
+		"10.0.0.1",
+		"172.16.0.1",
+		"192.168.3.2-5",
+		"192.168.2.0/24",
+	})
+
+	sc.AddExcludes([]string{
+		"http://192.168.1.1",
+		"192.168.2.0/24",
+	})
+
+	testCases := []struct {
+		url      string
+		expected bool
+	}{
+		{"192.168.1.1", true},
+		{"10.0.0.1", true},
+		{"172.16.0.1", true},
+		{"192.168.1.1", true},
+		{"192.168.3.3", true},
+		{"192.168.3.5", true},
+		{"192.168.1.6", false},
+		{"10.0.0.2", false},
+		{"172.16.0.2", false},
+		{"http://192.168.1.1", false},
 	}
 
-	if s.IsTargetExcluded("192.168.0.1") {
-		t.Fatal()
-	}
+	for _, tc := range testCases {
+		t.Run(tc.url, func(t *testing.T) {
+			result := sc.IsInScope(tc.url)
 
-	if !s.IsTargetExcluded("exclude.example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetExcluded("sub.somedomain.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetExcluded("192.168.0.2:8080") {
-		t.Fatal()
-	}
-
-	if s.IsTargetExcluded("192.168.0.2:9090") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetExcluded("exclude.example.com:443") {
-		t.Fatal()
-	}
-
-	if s.IsTargetExcluded("exclude.example.com:80") {
-		t.Fatal()
-	}
-}
-
-func TestIsInScope(t *testing.T) {
-	s := Init()
-
-	if s.IsTargetInScope("192.168.0.7") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("192.168.0.2") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("https://example.com/robots.txt") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("http://foo.example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("sub.example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("example.com") {
-		t.Fatal()
-	}
-
-	if !s.IsTargetInScope("http://example.com/foo/scope.html") {
-		t.Fatal()
-	}
-}
-
-func TestRemoveTarget(t *testing.T) {
-	s := Init()
-
-	if err := s.RemoveTargetFromScope("example.com"); err != nil {
-		t.Fatal()
-	}
-
-	if s.IsTargetInScope("example.com") {
-		t.Fatal()
-	}
-
-	if err := s.RemoveTargetFromScope("example.com"); err == nil {
-		t.Fatal()
+			if result != tc.expected {
+				t.Errorf("expected %v for URL '%s', got %v", tc.expected, tc.url, result)
+			}
+		})
 	}
 }
