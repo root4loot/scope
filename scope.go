@@ -131,6 +131,24 @@ func (s *Scope) GetScope() []string {
 	return result
 }
 
+// GetIncludes returns the include scope definitions as a slice of strings
+func (s *Scope) GetIncludes() []string {
+	var includes []string
+	for _, include := range s.includes {
+		includes = append(includes, include.Original)
+	}
+	return includes
+}
+
+// GetExcludes returns the exclude scope definitions as a slice of strings
+func (s *Scope) GetExcludes() []string {
+	var excludes []string
+	for _, exclude := range s.excludes {
+		excludes = append(excludes, exclude.Original)
+	}
+	return excludes
+}
+
 func (s *Scope) inScopeIP(ip string) bool {
 	checkMatch := func(definitions []ScopeDefinition, shouldMatch bool) bool {
 		for _, def := range definitions {
