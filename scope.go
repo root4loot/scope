@@ -12,8 +12,8 @@ import (
 
 // ScopeDefinition holds the original string and its compiled regex
 type ScopeDefinition struct {
-	Original string
-	Regex    *regexp.Regexp
+	Definition string
+	regex      *regexp.Regexp
 }
 
 // Scope holds the include and exclude lists
@@ -37,8 +37,8 @@ func (s *Scope) AddInclude(definition string) error {
 
 	if iputil.IsIP(definition) || iputil.IsIPRange(definition) {
 		s.includes = append(s.includes, ScopeDefinition{
-			Original: definition,
-			Regex:    nil,
+			Definition: definition,
+			regex:      nil,
 		})
 		return nil
 	}
@@ -49,8 +49,8 @@ func (s *Scope) AddInclude(definition string) error {
 	}
 
 	s.includes = append(s.includes, ScopeDefinition{
-		Original: definition,
-		Regex:    regex,
+		Definition: definition,
+		regex:      regex,
 	})
 	return nil
 }
@@ -72,8 +72,8 @@ func (s *Scope) AddExclude(definition string) error {
 
 	if iputil.IsIP(definition) || iputil.IsIPRange(definition) {
 		s.excludes = append(s.excludes, ScopeDefinition{
-			Original: definition,
-			Regex:    nil,
+			Definition: definition,
+			regex:      nil,
 		})
 		return nil
 	}
@@ -84,8 +84,8 @@ func (s *Scope) AddExclude(definition string) error {
 	}
 
 	s.excludes = append(s.excludes, ScopeDefinition{
-		Original: definition,
-		Regex:    regex,
+		Definition: definition,
+		regex:      regex,
 	})
 	return nil
 }
@@ -119,13 +119,13 @@ func (s *Scope) GetScope() []string {
 	for _, include := range s.includes {
 		excluded := false
 		for _, exclude := range s.excludes {
-			if exclude.Regex.MatchString(include.Original) {
+			if exclude.regex.MatchString(include.Definition) {
 				excluded = true
 				break
 			}
 		}
 		if !excluded {
-			result = append(result, include.Original)
+			result = append(result, include.Definition)
 		}
 	}
 	return result
@@ -135,7 +135,7 @@ func (s *Scope) GetScope() []string {
 func (s *Scope) GetIncludes() []string {
 	var includes []string
 	for _, include := range s.includes {
-		includes = append(includes, include.Original)
+		includes = append(includes, include.Definition)
 	}
 	return includes
 }
@@ -144,7 +144,7 @@ func (s *Scope) GetIncludes() []string {
 func (s *Scope) GetExcludes() []string {
 	var excludes []string
 	for _, exclude := range s.excludes {
-		excludes = append(excludes, exclude.Original)
+		excludes = append(excludes, exclude.Definition)
 	}
 	return excludes
 }
@@ -152,17 +152,17 @@ func (s *Scope) GetExcludes() []string {
 func (s *Scope) inScopeIP(ip string) bool {
 	checkMatch := func(definitions []ScopeDefinition, shouldMatch bool) bool {
 		for _, def := range definitions {
-			if def.Regex == nil {
-				if ip == def.Original {
+			if def.regex == nil {
+				if ip == def.Definition {
 					return shouldMatch
 				}
-				if iputil.IsIPRange(def.Original) && iputil.IsIPInRange(ip, def.Original) {
+				if iputil.IsIPRange(def.Definition) && iputil.IsIPInRange(ip, def.Definition) {
 					return shouldMatch
 				}
-				if iputil.IsCIDR(def.Original) && iputil.IsIPInCIDR(ip, def.Original) {
+				if iputil.IsCIDR(def.Definition) && iputil.IsIPInCIDR(ip, def.Definition) {
 					return shouldMatch
 				}
-			} else if def.Regex.MatchString(ip) {
+			} else if def.regex.MatchString(ip) {
 				return shouldMatch
 			}
 		}
@@ -178,7 +178,7 @@ func (s *Scope) inScopeIP(ip string) bool {
 func (s *Scope) inScopeURL(url string) bool {
 	checkMatch := func(definitions []ScopeDefinition, shouldMatch bool) bool {
 		for _, def := range definitions {
-			if def.Regex.MatchString(url) {
+			if def.regex.MatchString(url) {
 				return shouldMatch
 			}
 		}
