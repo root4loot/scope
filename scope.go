@@ -178,7 +178,7 @@ func (s *Scope) inScopeIP(ip string) bool {
 func (s *Scope) inScopeURL(url string) bool {
 	checkMatch := func(definitions []ScopeDefinition, shouldMatch bool) bool {
 		for _, def := range definitions {
-			if def.regex.MatchString(url) {
+			if def.regex != nil && def.regex.MatchString(url) {
 				return shouldMatch
 			}
 		}

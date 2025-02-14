@@ -90,3 +90,57 @@ func TestIPInclusions(t *testing.T) {
 		})
 	}
 }
+
+func TestIsInScopeWithExclusions(t *testing.T) {
+	sc := NewScope()
+
+	// Adding includes
+	sc.AddIncludes([]string{
+		"example.com",
+		"sub.example.com",
+		"192.168.1.1",
+		"10.0.0.1",
+		"172.16.0.1",
+		"192.168.3.2-5",
+		"192.168.2.0/24",
+	})
+
+	// Adding excludes
+	sc.AddExcludes([]string{
+		"example.com:8080",
+		"example.com:9090",
+		"https://example.com:8080",
+		"192.168.2.0/24",
+		"192.168.1.1",
+	})
+
+	// Test cases
+	tests := []struct {
+		target   string
+		expected bool
+	}{
+		{"example.com", true},
+		{"example.com:8080", false},
+		{"example.com:9090", false},
+		{"sub.example.com", true},
+		{"https://example.com:8080", false},
+		{"192.168.1.1", false},
+		{"10.0.0.1", true},
+		{"172.16.0.1", true},
+		{"192.168.3.3", true},
+		{"192.168.3.5", true},
+		{"192.168.1.6", false},
+		{"10.0.0.2", false},
+		{"172.16.0.2", false},
+		{"192.168.2.1", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.target, func(t *testing.T) {
+			result := sc.IsInScope(test.target)
+			if result != test.expected {
+				t.Errorf("expected %v for target '%s', got %v", test.expected, test.target, result)
+			}
+		})
+	}
+}
