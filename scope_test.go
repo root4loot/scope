@@ -195,3 +195,70 @@ func TestIsExcluded(t *testing.T) {
 		})
 	}
 }
+
+func TestIsInScope_WithExplicitScope(t *testing.T) {
+	sc := NewScope()
+
+	// Set explicit includes
+	sc.AddIncludes([]string{
+		"allowed.com",
+		"192.168.1.10",
+	})
+
+	// Set excludes
+	sc.AddExcludes([]string{
+		"blocked.com",
+		"192.168.1.20",
+	})
+
+	tests := []struct {
+		target   string
+		expected bool
+	}{
+		{"allowed.com", true},
+		{"blocked.com", false},
+		{"random.com", false},
+		{"192.168.1.10", true},
+		{"192.168.1.20", false},
+		{"192.168.1.30", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.target, func(t *testing.T) {
+			result := sc.IsInScope(test.target)
+			if result != test.expected {
+				t.Errorf("expected %v for target '%s', got %v", test.expected, test.target, result)
+			}
+		})
+	}
+}
+
+func TestIsInScope_DefaultOpenScope(t *testing.T) {
+	sc := NewScope()
+
+	sc.AddExcludes([]string{
+		"blocked.com",
+		"192.168.1.20",
+	})
+
+	tests := []struct {
+		target   string
+		expected bool
+	}{
+		{"allowed.com", true},
+		{"blocked.com", false},
+		{"random.com", true},
+		{"192.168.1.10", true},
+		{"192.168.1.20", false},
+		{"192.168.1.30", true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.target, func(t *testing.T) {
+			result := sc.IsInScope(test.target)
+			if result != test.expected {
+				t.Errorf("expected %v for target '%s', got %v", test.expected, test.target, result)
+			}
+		})
+	}
+}

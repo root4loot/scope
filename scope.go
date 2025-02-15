@@ -102,15 +102,21 @@ func (s *Scope) AddExcludes(definitions []string) error {
 
 // IsInScope checks if a given URL or domain is in scope
 func (s *Scope) IsInScope(target string) bool {
-	if domainutil.IsDomainName(target) || urlutil.IsURL(target) {
-		return s.inScopeURL(target)
+	if s.IsExcluded(target) {
+		return false
 	}
 
-	if iputil.IsIP(target) {
-		return s.inScopeIP(target)
+	if s.isExplicitScope() {
+		if domainutil.IsDomainName(target) || urlutil.IsURL(target) {
+			return s.inScopeURL(target)
+		}
+		if iputil.IsIP(target) {
+			return s.inScopeIP(target)
+		}
+		return false
 	}
 
-	return false
+	return true
 }
 
 // GetScope returns the active inclusions, removing any that are excluded
@@ -180,6 +186,10 @@ func (s *Scope) IsExcluded(target string) bool {
 	}
 
 	return false
+}
+
+func (s *Scope) isExplicitScope() bool {
+	return len(s.includes) > 0
 }
 
 func (s *Scope) inScopeIP(ip string) bool {

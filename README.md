@@ -19,10 +19,10 @@ import (
 )
 
 func main() {
-	// Initialize a new Scope instance
+	// Initialize a new scope instance
 	sc := scope.NewScope()
 
-	// Add includes
+	// Explicit scope mode: Only defined includes are in scope
 	sc.AddInclude("example.com")
 	sc.AddInclude("192.168.1.1")
 
@@ -36,7 +36,13 @@ func main() {
 
 	// Check if an IP is in scope
 	fmt.Println(sc.IsInScope("192.168.1.1"))        // Output: false
-	fmt.Println(sc.IsInScope("10.0.0.1"))           // Output: false
+	fmt.Println(sc.IsInScope("10.0.0.1"))           // Output: true
+
+	// Implicit scope mode: Everything is in scope unless explicitly excluded
+	sc2 := scope.NewScope()
+	sc2.AddExclude("blocked.com")
+	fmt.Println(sc2.IsInScope("random.com"))       // Output: true
+	fmt.Println(sc2.IsInScope("blocked.com"))     // Output: false
 
 	// Get active scope
 	activeScope := sc.GetScope()
@@ -44,8 +50,7 @@ func main() {
 }
 ```
 
-For more detailed usage, see [example.go](https://github.com/root4loot/scope/blob/main/example/example.go)
-
-## Contributing
-
-Contributions to goscope are welcome. If you find any issues or have suggestions for improvements, feel free to open an issue or submit a pull request.
+### **Scope Behavior**
+- If no includes are defined, **everything is in scope** unless explicitly excluded.
+- If includes are defined, only those targets are in scope, and everything else is out of scope by default.
+- Exclusions always take priority over inclusions.
