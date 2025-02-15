@@ -106,7 +106,7 @@ func (s *Scope) IsInScope(target string) bool {
 		return false
 	}
 
-	if s.isExplicitScope() {
+	if s.IsExplicitScope() {
 		if domainutil.IsDomainName(target) || urlutil.IsURL(target) {
 			return s.inScopeURL(target)
 		}
@@ -188,7 +188,7 @@ func (s *Scope) IsExcluded(target string) bool {
 	return false
 }
 
-func (s *Scope) isExplicitScope() bool {
+func (s *Scope) IsExplicitScope() bool {
 	return len(s.includes) > 0
 }
 
