@@ -144,3 +144,54 @@ func TestIsInScopeWithExclusions(t *testing.T) {
 		})
 	}
 }
+
+func TestIsExcluded(t *testing.T) {
+	sc := NewScope()
+
+	sc.AddIncludes([]string{
+		"example.com",
+		"sub.example.com",
+		"192.168.1.1",
+		"10.0.0.1",
+		"172.16.0.1",
+		"192.168.3.2-5",
+		"192.168.2.0/24",
+	})
+
+	sc.AddExcludes([]string{
+		"example.com:8080",
+		"example.com:9090",
+		"https://example.com:8080",
+		"192.168.2.0/24",
+		"192.168.1.1",
+	})
+
+	tests := []struct {
+		target   string
+		expected bool
+	}{
+		{"example.com", false},
+		{"example.com:8080", true},
+		{"example.com:9090", true},
+		{"sub.example.com", false},
+		{"https://example.com:8080", true},
+		{"192.168.1.1", true},
+		{"10.0.0.1", false},
+		{"172.16.0.1", false},
+		{"192.168.3.3", false},
+		{"192.168.3.5", false},
+		{"192.168.1.6", false},
+		{"10.0.0.2", false},
+		{"172.16.0.2", false},
+		{"192.168.2.1", true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.target, func(t *testing.T) {
+			result := sc.IsExcluded(test.target)
+			if result != test.expected {
+				t.Errorf("expected %v for target '%s', got %v", test.expected, test.target, result)
+			}
+		})
+	}
+}

@@ -149,6 +149,39 @@ func (s *Scope) GetExcludes() []string {
 	return excludes
 }
 
+// IsExcluded checks if a given target is explicitly excluded
+func (s *Scope) IsExcluded(target string) bool {
+	if s == nil {
+		return false
+	}
+
+	for _, def := range s.excludes {
+		if target == def.Definition {
+			return true
+		}
+
+		if iputil.IsIP(target) {
+			if iputil.IsCIDR(def.Definition) {
+				if iputil.IsIPInCIDR(target, def.Definition) {
+					return true
+				}
+			}
+
+			if iputil.IsIPRange(def.Definition) {
+				if iputil.IsIPInRange(target, def.Definition) {
+					return true
+				}
+			}
+		}
+
+		if def.regex != nil && def.regex.MatchString(target) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *Scope) inScopeIP(ip string) bool {
 	checkMatch := func(definitions []ScopeDefinition, shouldMatch bool) bool {
 		for _, def := range definitions {
