@@ -247,6 +247,7 @@ func TestIsInScope_DefaultOpenScope(t *testing.T) {
 	}{
 		{"allowed.com", true},
 		{"blocked.com", false},
+		{"www.blocked.com", false},
 		{"random.com", true},
 		{"192.168.1.10", true},
 		{"192.168.1.20", false},

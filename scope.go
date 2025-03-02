@@ -249,7 +249,7 @@ func convertToRegex(definition string) (*regexp.Regexp, error) {
 			definition = strings.TrimPrefix(definition, "*.")
 			regexPattern = `^.*\.` + regexp.QuoteMeta(definition) + `(:\d+)?$`
 		} else {
-			regexPattern = `^` + regexp.QuoteMeta(definition) + `(:\d+)?$`
+			regexPattern = `^(?:.*\.)?` + regexp.QuoteMeta(definition) + `(:\d+)?$`
 		}
 	}
 
